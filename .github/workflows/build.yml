@@ -56,14 +56,15 @@ jobs:
           mka recoveryimage -j4
           echo "Build completed"
 
-      - name: Check output
+      - name: Copy output
         run: |
           cd ~/android/twrp
-          ls -la out/target/product/cannon/
-          find out/target/product/cannon -name "*.img" -type f
+          mkdir -p $GITHUB_WORKSPACE/output
+          cp out/target/product/cannon/recovery.img $GITHUB_WORKSPACE/output/
+          ls -la $GITHUB_WORKSPACE/output/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: twrp-cannon
-          path: /home/runner/android/twrp/out/target/product/cannon/recovery.img
+          path: output/recovery.img
