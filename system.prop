@@ -41,5 +41,3 @@ ro.hardware.sensors=mt6853
 ro.charger.enable_suspend=true
 
 # Build
-ro.build.description=cannon-user 12 SP1A.210812.016 V13.0.1.0.SJOCNXM release-keys
-ro.build.fingerprint=Redmi/cannon/cannon:12/SP1A.210812.016/V13.0.1.0.SJOCNXM:user/release-keys
