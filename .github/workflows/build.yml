@@ -31,7 +31,7 @@ jobs:
           repo version
           mkdir -p ~/android/twrp
           cd ~/android/twrp
-          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-14
+          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
           echo "Repo initialized"
 
       - name: Sync source
@@ -45,41 +45,22 @@ jobs:
           cd ~/android/twrp
           git clone https://github.com/1853821818/android_device_xiaomi_cannon-twrp.git device/xiaomi/cannon -b main
           echo "Device tree cloned"
-
-      - name: Patch release_config.mk
-        run: |
-          cd ~/android/twrp
-          echo "=== Patching release_config.mk ==="
-          # 注释掉错误检查，设置默认release
-          sed -i 's/$(error No release config set for target/#$(error No release config set for target/g' build/make/core/release_config.mk
-          sed -i 's/$(error No release config found for TARGET_RELEASE/#$(error No release config found for TARGET_RELEASE/g' build/make/core/release_config.mk
-          # 在文件开头设置默认release
-          sed -i '1i TARGET_RELEASE := trunk_staging' build/make/core/release_config.mk
-          echo "=== Patched file head ==="
-          head -20 build/make/core/release_config.mk
-          echo "=== Check for error lines ==="
-          grep -n "error" build/make/core/release_config.mk || true
-          echo "Patch completed"
+          ls -la device/xiaomi/cannon/
 
       - name: Build
         run: |
           cd ~/android/twrp
           export ALLOW_MISSING_DEPENDENCIES=true
-          export TARGET_RELEASE=trunk_staging
           source build/envsetup.sh
-          echo "=== Try lunch ==="
-          lunch twrp_cannon-eng 2>&1 || true
-          echo "=== Try lunch with release ==="
-          lunch twrp_cannon-trunk_staging-eng 2>&1 || true
-          echo "=== Start build ==="
+          lunch twrp_cannon-eng
           mka recoveryimage -j4
           echo "Build completed"
 
       - name: Check output
         run: |
           cd ~/android/twrp
-          ls -la out/target/product/cannon/ 2>&1 || true
-          find out/target/product/cannon -name "*.img" -type f 2>&1 || true
+          ls -la out/target/product/cannon/
+          find out/target/product/cannon -name "*.img" -type f
 
       - name: Copy output
         run: |
@@ -91,6 +72,7 @@ jobs:
           else
             echo "recovery.img not found"
           fi
+          ls -la $GITHUB_WORKSPACE/output/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
