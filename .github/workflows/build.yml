@@ -1,0 +1,92 @@
+name: Build TWRP for Redmi Note 9 5G (cannon)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  MANIFEST_BRANCH: 'android-12.1'
+  DEVICE: 'cannon'
+  OEM: 'xiaomi'
+  TWRP_MANIFEST: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cleanup
+        uses: rokibhasansagar/slimhub_actions@main
+
+      - name: Prepare Build Environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 libncurses5 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig python2 python3 repo
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git config --global color.ui false
+
+      - name: Initialize Repo
+        run: |
+          mkdir -p ~/android/twrp
+          cd ~/android/twrp
+          repo init --depth=1 -u $TWRP_MANIFEST -b $MANIFEST_BRANCH
+
+      - name: Sync Source
+        run: |
+          cd ~/android/twrp
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+      - name: Clone Device Tree
+        run: |
+          cd ~/android/twrp
+          git clone https://github.com/${{ github.repository }}.git device/$OEM/$DEVICE -b main
+
+      - name: Set Up Build Environment
+        run: |
+          cd ~/android/twrp
+          export ALLOW_MISSING_DEPENDENCIES=true
+          source build/envsetup.sh
+          lunch twrp_${DEVICE}-eng
+
+      - name: Build Recovery
+        run: |
+          cd ~/android/twrp
+          export ALLOW_MISSING_DEPENDENCIES=true
+          source build/envsetup.sh
+          lunch twrp_${DEVICE}-eng
+          mka recoveryimage -j$(nproc --all)
+
+      - name: Check Output
+        run: |
+          cd ~/android/twrp
+          ls -la out/target/product/$DEVICE/
+          find out/target/product/$DEVICE -name "*.img" -type f
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: twrp-${{ env.DEVICE }}
+          path: ~/android/twrp/out/target/product/${{ env.DEVICE }}/recovery.img
+          if-no-files-found: error
+
+      - name: Create Release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: twrp-${{ env.DEVICE }}-${{ github.run_number }}
+          name: TWRP for ${{ env.DEVICE }} - Build ${{ github.run_number }}
+          files: ~/android/twrp/out/target/product/${{ env.DEVICE }}/recovery.img
+          body: |
+            TWRP Recovery for Redmi Note 9 5G (cannon)
+            - Built from TWRP ${{ env.MANIFEST_BRANCH }}
+            - Device tree: ${{ github.server_url }}/${{ github.repository }}
+            - Kernel: Prebuilt from OriginOS 4.0
+            - FBE v1 decryption support
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
