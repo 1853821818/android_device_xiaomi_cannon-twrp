@@ -17,11 +17,17 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Cleanup
-        uses: rokibhasansagar/slimhub_actions@main
 
       - name: Prepare Build Environment
         run: |
