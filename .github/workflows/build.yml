@@ -46,32 +46,33 @@ jobs:
           git clone https://github.com/1853821818/android_device_xiaomi_cannon-twrp.git device/xiaomi/cannon -b main
           echo "Device tree cloned"
 
-      - name: Debug release config
+      - name: Create release config
         run: |
           cd ~/android/twrp
-          echo "=== build/release directory ==="
-          ls -la build/make/core/release_config.mk 2>&1 || true
-          ls -la build/release/ 2>&1 || true
-          echo "=== Search TARGET_RELEASE in build system ==="
-          grep -r "TARGET_RELEASE" build/make/core/ 2>/dev/null | head -20 || true
-          echo "=== Available release configs ==="
-          grep -r "ap3a\|ap2a\|ap1a\|release" build/make/core/release_config.mk 2>/dev/null | head -20 || true
-          echo "=== Try TARGET_RELEASE=ap3a ==="
-          export ALLOW_MISSING_DEPENDENCIES=true
-          export TARGET_RELEASE=ap3a
-          source build/envsetup.sh
-          lunch twrp_cannon-eng 2>&1 || true
-          echo "=== Try lunch twrp_cannon-ap3a-eng ==="
-          lunch twrp_cannon-ap3a-eng 2>&1 || true
-          echo "Debug completed"
+          echo "=== Create build/release directory ==="
+          mkdir -p build/release
+          cat > build/release/release_config_map.mk << 'EOF'
+          release_config_map := \
+              trunk_staging \
+          
+          release_config_aliases := \
+          
+          EOF
+          echo "=== Create trunk_staging config ==="
+          mkdir -p build/release/trunk_staging
+          cat > build/release/trunk_staging/Android.mk << 'EOF'
+          EOF
+          echo "Release config created"
+          ls -la build/release/
 
-      - name: Build with TARGET_RELEASE
+      - name: Build with trunk_staging
         run: |
           cd ~/android/twrp
           export ALLOW_MISSING_DEPENDENCIES=true
-          export TARGET_RELEASE=ap3a
           source build/envsetup.sh
-          lunch twrp_cannon-ap3a-eng
+          echo "=== Try lunch twrp_cannon-trunk_staging-eng ==="
+          lunch twrp_cannon-trunk_staging-eng
+          echo "=== Start build ==="
           mka recoveryimage -j4
           echo "Build completed"
 
