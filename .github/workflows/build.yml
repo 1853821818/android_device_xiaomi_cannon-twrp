@@ -23,13 +23,12 @@ jobs:
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          export PATH=~/bin:$PATH
-          repo version
+          echo "PATH=$HOME/bin:$PATH" >> $GITHUB_ENV
           echo "Repo installed"
 
       - name: Initialize repo
         run: |
-          export PATH=~/bin:$PATH
+          repo version
           mkdir -p ~/android/twrp
           cd ~/android/twrp
           repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b android-12.1
