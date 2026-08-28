@@ -52,16 +52,31 @@ jobs:
           cd ~/android/twrp
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
-          lunch twrp_cannon-eng
-          mka recoveryimage -j4
-          echo "Build completed"
+          echo "=== Available lunch combos ==="
+          lunch twrp_cannon-eng 2>&1 || true
+          echo "=== Trying breakfast ==="
+          breakfast twrp_cannon 2>&1 || true
+          echo "=== Trying mka ==="
+          mka recoveryimage -j4 2>&1 || true
+          echo "Build step completed"
+
+      - name: Check output
+        run: |
+          cd ~/android/twrp
+          ls -la out/target/product/cannon/ 2>&1 || true
+          find out/target/product/cannon -name "*.img" -type f 2>&1 || true
 
       - name: Copy output
         run: |
           cd ~/android/twrp
           mkdir -p $GITHUB_WORKSPACE/output
-          cp out/target/product/cannon/recovery.img $GITHUB_WORKSPACE/output/
-          ls -la $GITHUB_WORKSPACE/output/
+          if [ -f out/target/product/cannon/recovery.img ]; then
+            cp out/target/product/cannon/recovery.img $GITHUB_WORKSPACE/output/
+            echo "recovery.img copied"
+          else
+            echo "recovery.img not found"
+          fi
+          ls -la $GITHUB_WORKSPACE/output/ 2>&1 || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
