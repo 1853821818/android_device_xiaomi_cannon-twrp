@@ -13,7 +13,7 @@ jobs:
       - name: Install basic tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y git-core curl python3
+          sudo apt-get install -y git-core curl python3 build-essential zip unzip
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           echo "Basic tools installed"
@@ -39,4 +39,31 @@ jobs:
           cd ~/android/twrp
           repo sync -c -j4 --force-sync --no-clone-bundle --no-tags
           echo "Source synced"
-          df -h
+
+      - name: Clone device tree
+        run: |
+          cd ~/android/twrp
+          git clone https://github.com/1853821818/android_device_xiaomi_cannon-twrp.git device/xiaomi/cannon -b main
+          echo "Device tree cloned"
+          ls -la device/xiaomi/cannon/
+
+      - name: Build
+        run: |
+          cd ~/android/twrp
+          export ALLOW_MISSING_DEPENDENCIES=true
+          source build/envsetup.sh
+          lunch twrp_cannon-eng
+          mka recoveryimage -j4
+          echo "Build completed"
+
+      - name: Check output
+        run: |
+          cd ~/android/twrp
+          ls -la out/target/product/cannon/
+          find out/target/product/cannon -name "*.img" -type f
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: twrp-cannon
+          path: ~/android/twrp/out/target/product/cannon/recovery.img
